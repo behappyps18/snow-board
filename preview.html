@@ -123,19 +123,15 @@ summary{cursor:pointer;color:var(--accent);font-weight:600}
       <a class="rbtn" href="https://www.accuweather.com/en/us/anchorage/99501/weather-radar/346835" target="_blank" rel="noopener">AccuWeather · Anchorage</a>
       <a class="rbtn" href="https://www.accuweather.com/en/us/eagle-river/99577/weather-radar/341670" target="_blank" rel="noopener">AccuWeather · Eagle River</a>
     </div>
-    <details id="radarMore"><summary>NWS radar loop and MinuteCast</summary>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
-        <div class="radar-tabs" role="group" aria-label="Radar loop">
-          <button type="button" data-loop="PAHG" aria-pressed="true">Anchorage area</button>
-          <button type="button" data-loop="ALASKA" aria-pressed="false">All of Alaska</button>
-        </div>
-        <img class="radar-img" id="radarImg" alt="Animated NWS radar loop" src="https://radar.weather.gov/ridge/standard/PAHG_loop.gif">
-        <div class="links">
-          <a href="https://www.accuweather.com/en/us/anchorage/99501/minute-weather-forecast/346835" target="_blank" rel="noopener">AccuWeather MinuteCast (start/stop by the minute)</a>
-          <a href="https://radar.weather.gov/station/pahg/standard" target="_blank" rel="noopener">Full NWS radar</a>
-        </div>
-      </div>
-    </details>
+    <div class="radar-tabs" role="group" aria-label="Radar loop">
+      <button type="button" data-loop="PAHG" aria-pressed="true">Anchorage area</button>
+      <button type="button" data-loop="ALASKA" aria-pressed="false">All of Alaska</button>
+    </div>
+    <img class="radar-img" id="radarImg" alt="Animated NWS radar loop" src="https://radar.weather.gov/ridge/standard/PAHG_loop.gif">
+    <div class="links">
+      <a href="https://www.accuweather.com/en/us/anchorage/99501/minute-weather-forecast/346835" target="_blank" rel="noopener">AccuWeather MinuteCast</a>
+      <a href="https://radar.weather.gov/station/pahg/standard" target="_blank" rel="noopener">Full NWS radar</a>
+    </div>
   </section>
 
   <section class="panel">
