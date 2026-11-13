@@ -138,6 +138,19 @@ td.r,th.r{text-align:right}
     <p class="muted" style="margin:0;font-size:.88rem">The main number is the National Weather Service Anchorage forecast, which forecasters adjust by hand for local terrain like the Hillside and Eagle River valley. Four global models (European, American GFS, Canadian, German) are shown beside it. When they agree, confidence is high. When they spread out, watch radar and check again before committing crews.</p>
   </section>
 
+  <section class="panel" aria-labelledby="obs-h">
+    <h2 id="obs-h">Snow on the ground now</h2>
+    <p class="muted" style="margin:0;font-size:.9rem">Measured reports, not forecasts. After a storm the NWS posts storm totals by neighborhood (Hillside, Midtown, Eagle River, Chugiak and more) as a "Public Information Statement". The latest one shows below.</p>
+    <details><summary id="pnsSum">Latest NWS snow reports</summary><div class="afd" id="pns">Loading…</div></details>
+    <div class="links">
+      <a href="https://www.cocorahs.org/Maps/ViewMap.aspx?state=AK" target="_blank" rel="noopener">CoCoRaHS map · daily snow depth from local volunteers</a>
+      <a href="https://forecast.weather.gov/product.php?site=AFC&amp;issuedby=AFC&amp;product=PNS" target="_blank" rel="noopener">All NWS storm-total reports</a>
+      <a href="https://forecast.weather.gov/product.php?site=AFC&amp;issuedby=ANC&amp;product=CLI" target="_blank" rel="noopener">Airport daily snow depth</a>
+      <a href="https://weathercams.faa.gov/" target="_blank" rel="noopener">FAA weather cameras</a>
+      <a href="https://511.alaska.gov/" target="_blank" rel="noopener">Alaska 511 road cameras</a>
+    </div>
+  </section>
+
   <section class="panel" aria-labelledby="afd-h">
     <h2 id="afd-h">NWS forecaster discussion</h2>
     <p class="muted" style="margin:0;font-size:.9rem">What the Anchorage forecasters are thinking, including how sure they are. Look for "snow" and "confidence".</p>
@@ -361,6 +374,18 @@ function renderAlerts(all){
   $("#alerts").innerHTML=list.map(a=>`<div class="alert"><b>${esc(a.event)}</b> · ${esc(a.areaDesc||"")}<br><span>${esc(a.headline||"")}</span><details><summary>Details</summary>${esc(a.description||"")}</details></div>`).join("");
 }
 
+async function loadPNS(){
+  try{
+    const list=await getJSON("https://api.weather.gov/products/types/PNS/locations/AFC");
+    const items=(list["@graph"]||[]).slice(0,8);
+    let shown=null;
+    for(const it of items){const p=await getJSON("https://api.weather.gov/products/"+it.id); if(/snow/i.test(p.productText)){shown=p;break;}}
+    if(!shown) throw new Error("no recent snow reports");
+    $("#pnsSum").textContent="Latest NWS snow reports · issued "+new Date(shown.issuanceTime).toLocaleString("en-US",{timeZone:TZ,weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+    $("#pns").textContent=shown.productText;
+  }catch(e){$("#pns").textContent="No recent NWS snow reports ("+e.message+"). Check CoCoRaHS below.";}
+}
+
 async function loadAFD(){
   try{
     const list=await getJSON("https://api.weather.gov/products/types/AFD/locations/AFC");
@@ -383,7 +408,7 @@ async function refreshAll(){
     renderLoc(loc,nws,models,t0,errs);
   }));
   renderAlerts(alerts);
-  loadAFD();
+  loadAFD(); loadPNS();
   $("#stamp").textContent="Updated "+fmtT(Date.now())+" AK time";
   busy=false; $("#refresh").disabled=false;
 }
