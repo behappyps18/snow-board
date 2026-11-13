@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1720">
+<title>Snow Call Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: one column of location cards, each opening with a big action call, then timing bars and source agreement. Radar sits up top. */
+:root{
+  --bg:#eef2f5; --panel:#ffffff; --ink:#14202b; --muted:#5b6b79; --line:#d5dde4;
+  --accent:#1f6fb2; --accent-ink:#ffffff;
+  --go:#1d7a46; --warn:#b26a00; --stop:#b3261e; --ice:#2f7fa8; --quiet:#6b7a86;
+  --bar:#5d9fd6; --bar-hi:#1f6fb2;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1720; --panel:#17222d; --ink:#e7eef4; --muted:#93a4b3; --line:#283846;
+  --accent:#5aa9e6; --accent-ink:#0b1219;
+  --go:#4cc386; --warn:#f0a63a; --stop:#ff6b5e; --ice:#6cc3ea; --quiet:#8596a4;
+  --bar:#3d7fb5; --bar-hi:#7cc0f2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1720; --panel:#17222d; --ink:#e7eef4; --muted:#93a4b3; --line:#283846;
+  --accent:#5aa9e6; --accent-ink:#0b1219;
+  --go:#4cc386; --warn:#f0a63a; --stop:#ff6b5e; --ice:#6cc3ea; --quiet:#8596a4;
+  --bar:#3d7fb5; --bar-hi:#7cc0f2; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-area-inset-bottom,0px))}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding-block:14px}
+h1,h2,h3{font-family:var(--display);letter-spacing:.01em;margin:0;text-wrap:balance}
+h1{font-size:1.9rem;line-height:1}
+h2{font-size:1.45rem}
+h3{font-size:1.05rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+a{color:var(--accent)}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.stamp{color:var(--muted);font-size:.85rem;font-variant-numeric:tabular-nums}
+button{font:600 .95rem var(--body);border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 12px;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.radar-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.rbtn{display:flex;flex-direction:column;justify-content:center;text-decoration:none;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:12px 14px;font-weight:600;min-height:58px}
+.rbtn small{font-weight:500;opacity:.85}
+.rbtn.alt{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.radar-img{width:100%;max-width:100%;border-radius:8px;background:#000;aspect-ratio:600/550;object-fit:contain;display:block}
+.radar-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.radar-tabs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.alerts{display:flex;flex-direction:column;gap:8px}
+.alert{border-left:5px solid var(--stop);background:var(--panel);border-radius:8px;padding:10px 12px;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.alert b{color:var(--stop)}
+.alert details{margin-top:4px;color:var(--muted);font-size:.9rem;white-space:pre-wrap}
+.loc-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.call{border-radius:10px;padding:12px 14px;color:#fff;display:flex;flex-direction:column;gap:4px}
+.call .verb{font:700 1.7rem/1.05 var(--display);letter-spacing:.02em;text-transform:uppercase}
+.call .why{font-size:.95rem;opacity:.95}
+.call.plow{background:var(--stop)} .call.shovel{background:var(--warn)} .call.treat{background:var(--ice)} .call.watch{background:var(--quiet)} .call.clear{background:var(--go)}
+:root .call{color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .call{color:#0b1219}}
+:root[data-theme="dark"] .call{color:#0b1219}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.85rem;font-weight:600;border-radius:999px;padding:3px 10px;border:1.5px solid currentColor}
+.chip.on.plow{color:var(--stop)} .chip.on.shovel{color:var(--warn)} .chip.on.treat{color:var(--ice)}
+.chip.off{color:var(--muted);opacity:.6;font-weight:500}
+.nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.nums{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.num{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.num .v{font:700 1.6rem/1 var(--display);font-variant-numeric:tabular-nums}
+.num .l{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.chart-wrap{overflow-x:auto}
+svg text{fill:var(--muted);font:11px var(--body)}
+.legend{font-size:.82rem;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
+td.r,th.r{text-align:right}
+.table-wrap{overflow-x:auto}
+.conf{font-weight:600}
+.conf.high{color:var(--go)} .conf.med{color:var(--warn)} .conf.low{color:var(--stop)}
+.periods{display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+.periods div b{font-weight:600}
+.rules{font-size:.93rem;display:grid;gap:8px}
+.rules div{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:start}
+.tag{font:700 .9rem var(--display);text-transform:uppercase;letter-spacing:.04em;border-radius:6px;padding:3px 8px;text-align:center;color:#fff}
+.tag.plow{background:var(--stop)} .tag.shovel{background:var(--warn)} .tag.treat{background:var(--ice)}
+.muted{color:var(--muted)}
+.err{color:var(--stop);font-size:.9rem}
+.links{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.92rem}
+.afd{white-space:pre-wrap;font-size:.85rem;max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Snow Call Board</h1>
+      <div class="muted">Anchorage &amp; Eagle River · plow, shovel, sand &amp; salt</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span class="stamp" id="stamp">Loading forecasts…</span>
+      <button id="refresh" type="button">Refresh</button>
+    </div>
+  </div>
+
+  <div class="alerts" id="alerts"></div>
+
+  <section class="panel" aria-labelledby="radar-h">
+    <h2 id="radar-h">Radar</h2>
+    <div class="radar-btns">
+      <a class="rbtn" href="https://www.accuweather.com/en/us/anchorage/99501/weather-radar/346835" target="_blank" rel="noopener">AccuWeather radar · Anchorage<small>Main radar before, during, after</small></a>
+      <a class="rbtn" href="https://www.accuweather.com/en/us/eagle-river/99577/weather-radar/341670" target="_blank" rel="noopener">AccuWeather radar · Eagle River<small>Chugiak / Eagle River view</small></a>
+      <a class="rbtn alt" href="https://www.accuweather.com/en/us/anchorage/99501/minute-weather-forecast/346835" target="_blank" rel="noopener">AccuWeather MinuteCast<small>Start/stop by the minute</small></a>
+      <a class="rbtn alt" href="https://radar.weather.gov/station/pahg/standard" target="_blank" rel="noopener">NWS radar PAHG (Kenai)<small>Backup · the radar covering Anchorage</small></a>
+    </div>
+    <div class="radar-tabs" role="group" aria-label="Radar loop">
+      <button type="button" data-loop="PAHG" aria-pressed="true">Kenai radar loop (Anchorage)</button>
+      <button type="button" data-loop="ALASKA" aria-pressed="false">All of Alaska</button>
+    </div>
+    <img class="radar-img" id="radarImg" alt="Animated NWS radar loop" src="https://radar.weather.gov/ridge/standard/PAHG_loop.gif">
+    <div class="legend">Live NWS loop, reloads every 5 minutes. AccuWeather does not allow its radar to be embedded in other pages, so it opens in a new tab.</div>
+  </section>
+
+  <div id="locs" style="display:flex;flex-direction:column;gap:16px"></div>
+
+  <section class="panel" aria-labelledby="rules-h">
+    <h2 id="rules-h">How the call is made</h2>
+    <div class="rules">
+      <div><span class="tag plow">Plow</span><span>Lots and driveways when the blended forecast reaches <b>1.5"</b> or more in the next 24 hours. The board shows the hour the 1.5" mark is expected so you can stage trucks.</span></div>
+      <div><span class="tag shovel">Shovel</span><span>Sidewalk crews for anything from <b>a trace up to 2"</b>. From 1.5" to 2" both run: trucks on lots, crews on walks. Over 2", walks need a blower or sidewalk machine instead of hand shovels.</span></div>
+      <div><span class="tag treat">Sand / salt</span><span>Any freezing rain or drizzle, ice accumulation, snow under 0.5", or a thaw then refreeze across 32°F. Below 15°F rock salt barely works, so the board says sand.</span></div>
+    </div>
+    <p class="muted" style="margin:0;font-size:.88rem">The main number is the National Weather Service Anchorage forecast, which forecasters adjust by hand for local terrain like the Hillside and Eagle River valley. Four global models (European, American GFS, Canadian, German) are shown beside it. When they agree, confidence is high. When they spread out, watch radar and check again before committing crews.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="afd-h">
+    <h2 id="afd-h">NWS forecaster discussion</h2>
+    <p class="muted" style="margin:0;font-size:.9rem">What the Anchorage forecasters are thinking, including how sure they are. Look for "snow" and "confidence".</p>
+    <details><summary>Show latest discussion</summary><div class="afd" id="afd">Loading…</div></details>
+  </section>
+
+  <section class="panel">
+    <h3>More sources</h3>
+    <div class="links">
+      <a href="https://www.weather.gov/afc/" target="_blank" rel="noopener">NWS Anchorage office</a>
+      <a href="https://forecast.weather.gov/MapClick.php?lat=61.2181&lon=-149.9003" target="_blank" rel="noopener">NWS point forecast · Anchorage</a>
+      <a href="https://forecast.weather.gov/MapClick.php?lat=61.3214&lon=-149.5681" target="_blank" rel="noopener">NWS point forecast · Eagle River</a>
+      <a href="https://www.accuweather.com/en/us/anchorage/99501/hourly-weather-forecast/346835" target="_blank" rel="noopener">AccuWeather hourly · Anchorage</a>
+      <a href="https://www.accuweather.com/en/us/eagle-river/99577/hourly-weather-forecast/341670" target="_blank" rel="noopener">AccuWeather hourly · Eagle River</a>
+      <a href="https://511.alaska.gov/" target="_blank" rel="noopener">Alaska 511 road conditions</a>
+      <a href="https://weathercams.faa.gov/" target="_blank" rel="noopener">FAA weather cameras</a>
+    </div>
+  </section>
+  <p class="muted" style="font-size:.8rem;margin:0">Data: api.weather.gov (NWS) and open-meteo.com. Updates every 10 minutes while open. A forecast is a guide; radar and your own eyes have the last word.</p>
+</div>
+
+<script>
+const LOCS=[
+  {id:"anc",name:"Anchorage",lat:61.2181,lon:-149.9003},
+  {id:"er",name:"Eagle River",lat:61.3214,lon:-149.5681}
+];
+const MODELS=[
+  {key:"ecmwf_ifs025",label:"European (ECMWF)"},
+  {key:"gfs_seamless",label:"American (GFS)"},
+  {key:"gem_seamless",label:"Canadian (GEM)"},
+  {key:"icon_seamless",label:"German (ICON)"}
+];
+const TZ="America/Anchorage";
+const HOURS=48;
+const PLOW=1.5, SHOVEL_MAX=2.0, LIGHT=0.5;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtH=t=>new Date(t).toLocaleString("en-US",{timeZone:TZ,weekday:"short",hour:"numeric"});
+const fmtT=t=>new Date(t).toLocaleString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"});
+const inch=v=>v==null?"–":(v<0.05&&v>0?"<0.1":v.toFixed(1))+'"';
+
+async function getJSON(url){
+  const r=await fetch(url,{headers:{Accept:"application/geo+json, application/json"}});
+  if(!r.ok) throw new Error(r.status+" from "+new URL(url).host);
+  return r.json();
+}
+// ISO 8601 duration like PT6H / P1DT3H to hours
+function durH(d){const m=d.match(/P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?/);return (+(m[1]||0))*24+(+(m[2]||0))+(+(m[3]||0))/60;}
+// Spread an NWS gridpoint layer onto an hourly grid starting at t0. sum=true splits amounts evenly across the interval.
+function nwsHourly(layer,t0,sum,conv){
+  const out=new Array(HOURS).fill(null);
+  if(!layer||!layer.values) return out;
+  for(const v of layer.values){
+    const [start,dur]=v.validTime.split("/");
+    const s=Date.parse(start), n=Math.max(1,Math.round(durH(dur)));
+    const val=v.value==null?null:conv(v.value);
+    for(let i=0;i<n;i++){
+      const idx=Math.round((s+i*3600e3-t0)/3600e3);
+      if(idx>=0&&idx<HOURS) out[idx]=val==null?null:(sum?val/n:val);
+    }
+  }
+  return out;
+}
+const mm2in=v=>v/25.4, c2f=v=>v*9/5+32;
+
+async function loadNWS(loc,t0){
+  const p=await getJSON(`https://api.weather.gov/points/${loc.lat},${loc.lon}`);
+  const pr=p.properties;
+  const [grid,fc,al]=await Promise.allSettled([
+    getJSON(pr.forecastGridData),
+    getJSON(pr.forecast),
+    getJSON(`https://api.weather.gov/alerts/active?point=${loc.lat},${loc.lon}`)
+  ]);
+  const res={office:pr.gridId,periods:[],alerts:[]};
+  if(grid.status==="fulfilled"){
+    const g=grid.value.properties;
+    res.snow=nwsHourly(g.snowfallAmount,t0,true,mm2in);
+    res.ice=nwsHourly(g.iceAccumulation,t0,true,mm2in);
+    res.temp=nwsHourly(g.temperature,t0,false,c2f);
+    res.pop=nwsHourly(g.probabilityOfPrecipitation,t0,false,x=>x);
+    res.wx=(g.weather?.values||[]).filter(v=>{const s=Date.parse(v.validTime.split("/")[0]);return s<t0+HOURS*3600e3 && s+durH(v.validTime.split("/")[1])*3600e3>t0})
+      .flatMap(v=>(v.value||[]).map(w=>w&&w.weather)).filter(Boolean);
+  } else res.gridErr=grid.reason.message;
+  if(fc.status==="fulfilled") res.periods=fc.value.properties.periods.slice(0,4);
+  if(al.status==="fulfilled") res.alerts=al.value.features.map(f=>f.properties);
+  return res;
+}
+
+async function loadModels(loc,t0){
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}`+
+    `&hourly=snowfall,precipitation,temperature_2m,weather_code&models=${MODELS.map(m=>m.key).join(",")}`+
+    `&precipitation_unit=inch&temperature_unit=fahrenheit&timeformat=unixtime&forecast_days=3&timezone=${encodeURIComponent(TZ)}`;
+  const d=await getJSON(url);
+  const h=d.hourly, out={};
+  for(const m of MODELS){
+    const snow=new Array(HOURS).fill(null), temp=new Array(HOURS).fill(null), code=new Array(HOURS).fill(null);
+    h.time.forEach((t,i)=>{const idx=Math.round((t*1000-t0)/3600e3); if(idx<0||idx>=HOURS) return;
+      // snowfall arrives in inches when precipitation_unit=inch
+      snow[idx]=h[`snowfall_${m.key}`]?.[i]??null; temp[idx]=h[`temperature_2m_${m.key}`]?.[i]??null; code[idx]=h[`weather_code_${m.key}`]?.[i]??null;});
+    if(snow.some(v=>v!=null)) out[m.key]={snow,temp,code};
+  }
+  return out;
+}
+
+const sumN=(a,n)=>a.slice(0,n).reduce((s,v)=>s+(v||0),0);
+const hasData=a=>a&&a.some(v=>v!=null);
+function median(xs){const s=[...xs].sort((a,b)=>a-b);const m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function crossHour(arr,thr){let c=0;for(let i=0;i<arr.length;i++){c+=arr[i]||0;if(c>=thr) return i;}return -1;}
+function firstSnowHour(arr){return arr.findIndex(v=>(v||0)>=0.05);}
+
+function decide(loc,nws,models,t0){
+  // Primary curve: NWS when its grid has snow data, else the model median per hour.
+  const mk=Object.keys(models);
+  const medCurve=Array.from({length:HOURS},(_,i)=>{const xs=mk.map(k=>models[k].snow[i]).filter(v=>v!=null);return xs.length?median(xs):null;});
+  const useNWS=nws&&hasData(nws.snow);
+  const primary=useNWS?nws.snow:medCurve;
+  const temp=(nws&&hasData(nws.temp))?nws.temp:Array.from({length:HOURS},(_,i)=>{const xs=mk.map(k=>models[k].temp[i]).filter(v=>v!=null);return xs.length?median(xs):null;});
+  const s24=sumN(primary,24), s48=sumN(primary,48);
+  const sources=[];
+  if(useNWS) sources.push({label:"NWS Anchorage (primary)",s24,s48,primary:true});
+  for(const m of MODELS) if(models[m.key]) sources.push({label:m.label,s24:sumN(models[m.key].snow,24),s48:sumN(models[m.key].snow,48)});
+  // Agreement: share of sources landing in the same action band as the primary.
+  const band=v=>v>=PLOW?2:v>=0.1?1:0;
+  const pb=band(s24), agree=sources.filter(s=>band(s.s24)===pb).length;
+  const vals=sources.map(s=>s.s24), lo=Math.min(...vals), hi=Math.max(...vals);
+  const ratio=agree/sources.length;
+  const conf=sources.length<2?"med":ratio>=0.8&&(hi-lo)<1.5?"high":ratio>=0.6?"med":"low";
+
+  // Ice / treatment signals in next 24h
+  const freezingCodes=new Set([56,57,66,67]);
+  const frzModel=mk.some(k=>models[k].code.slice(0,24).some(c=>freezingCodes.has(c)));
+  const frzNWS=nws&&nws.wx&&nws.wx.some(w=>/freezing/i.test(w));
+  const iceAcc=nws&&hasData(nws.ice)?sumN(nws.ice,24):0;
+  const t24=temp.slice(0,24).filter(v=>v!=null);
+  const tMin=t24.length?Math.min(...t24):null, tMax=t24.length?Math.max(...t24):null;
+  let refreeze=false; for(let i=1;i<24;i++){if(temp[i-1]!=null&&temp[i]!=null&&temp[i-1]>32.5&&temp[i]<=32) refreeze=true;}
+  const freezing=frzNWS||frzModel||iceAcc>0.005;
+
+  const plowAt=crossHour(primary,PLOW), startAt=firstSnowHour(primary);
+  const plow=s24>=PLOW, shovel=s24>=0.1, treat=freezing||refreeze||(s24>=0.1&&s24<LIGHT)||(shovel&&tMin!=null&&tMin<=32);
+  const sandOnly=tMin!=null&&tMin<15;
+
+  let cls,verb,why;
+  if(plow){cls="plow";verb=`Plow · ${inch(s24)} in 24 hrs`;
+    why=`1.5" mark expected around ${fmtH(t0+plowAt*3600e3)}. Sidewalk crews ${s24>=SHOVEL_MAX?"need blowers above 2\"":"can hand-shovel walks (under 2\")"}.`;}
+  else if(shovel){cls="shovel";verb=`Shovel walks · ${inch(s24)}`;
+    why=`Snow starts around ${fmtH(t0+startAt*3600e3)}. Below the 1.5" plow trigger.`;}
+  else if(freezing||refreeze){cls="treat";verb="Sand & salt walks";
+    why=freezing?"Freezing rain, drizzle or ice is in the forecast.":"Temperatures thaw above 32°F and refreeze. Expect glaze.";}
+  else if(s48>=0.1){cls="watch";verb=`Watch · ${inch(s48)} in 48 hrs`;
+    why=`Nothing to do in the next 24 hours. Snow arrives ${startAt>=0?"around "+fmtH(t0+startAt*3600e3):"after that"}.`;}
+  else {cls="clear";verb="No call";why="No snow or ice expected in the next 48 hours.";}
+  if(treat&&cls!=="treat") why+=` Sand/salt after clearing${sandOnly?" (sand: below 15°F)":""}.`;
+  if(cls==="treat"&&sandOnly) why+=" Below 15°F, use sand. Rock salt won't work.";
+
+  return {primary,useNWS,s24,s48,sources,conf,lo,hi,agree,plow,shovel,treat,sandOnly,tMin,tMax,plowAt,startAt,cls,verb,why,temp};
+}
+
+function chart(d,t0){
+  const W=720,H=170,L=34,R=8,T=14,B=30,n=HOURS,bw=(W-L-R)/n;
+  const cum=[];let c=0;for(const v of d.primary){c+=v||0;cum.push(c);}
+  const maxBar=Math.max(0.3,...d.primary.map(v=>v||0));
+  const maxCum=Math.max(2,cum[cum.length-1]);
+  const y1=v=>T+(H-T-B)*(1-v/maxBar), y2=v=>T+(H-T-B)*(1-v/maxCum);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:520px" role="img" aria-label="Hourly snowfall and running total, next 48 hours">`;
+  // plow threshold line on cumulative scale
+  s+=`<line x1="${L}" x2="${W-R}" y1="${y2(PLOW)}" y2="${y2(PLOW)}" stroke="var(--stop)" stroke-dasharray="4 4" stroke-width="1"/>`;
+  s+=`<text x="${W-R}" y="${y2(PLOW)-4}" text-anchor="end">plow 1.5"</text>`;
+  d.primary.forEach((v,i)=>{if(!v) return; const x=L+i*bw+1, y=y1(v);
+    s+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${(H-B-y).toFixed(1)}" fill="var(--bar)" rx="1"/>`;});
+  const pts=cum.map((v,i)=>`${(L+(i+.5)*bw).toFixed(1)},${y2(v).toFixed(1)}`).join(" ");
+  s+=`<polyline points="${pts}" fill="none" stroke="var(--bar-hi)" stroke-width="2.2"/>`;
+  s+=`<circle cx="${(L+(n-.5)*bw).toFixed(1)}" cy="${y2(cum[n-1]).toFixed(1)}" r="3.5" fill="var(--bar-hi)"/>`;
+  s+=`<line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="var(--line)"/>`;
+  s+=`<text x="${L-4}" y="${y2(maxCum)+4}" text-anchor="end">${maxCum.toFixed(1)}"</text><text x="${L-4}" y="${H-B+4}" text-anchor="end">0</text>`;
+  for(let i=0;i<n;i+=6){const t=t0+i*3600e3, x=L+i*bw;
+    s+=`<line x1="${x}" x2="${x}" y1="${H-B}" y2="${H-B+4}" stroke="var(--line)"/><text x="${x}" y="${H-B+16}">${esc(fmtH(t).replace(/ /," "))}</text>`;}
+  return s+"</svg>";
+}
+
+function renderLoc(loc,nws,models,t0,errs){
+  const el=document.getElementById("loc-"+loc.id)||(()=>{const e=document.createElement("section");e.className="panel";e.id="loc-"+loc.id;$("#locs").appendChild(e);return e;})();
+  if(!nws&&!Object.keys(models||{}).length){
+    el.innerHTML=`<div class="loc-head"><h2>${esc(loc.name)}</h2></div><p class="err">Couldn't load any forecast: ${esc(errs.join("; "))}. Tap Refresh to try again.</p>`;return;
+  }
+  const d=decide(loc,nws,models||{},t0);
+  const confTxt={high:"High confidence",med:"Medium confidence",low:"Low confidence"}[d.conf];
+  el.innerHTML=`
+    <div class="loc-head"><h2>${esc(loc.name)}</h2><span class="conf ${d.conf}">${confTxt} · ${d.agree} of ${d.sources.length} sources agree</span></div>
+    <div class="call ${d.cls}"><div class="verb">${esc(d.verb)}</div><div class="why">${esc(d.why)}</div></div>
+    <div class="chips">
+      <span class="chip ${d.plow?"on":"off"} plow">Plow ${d.plow?"yes":"no"}</span>
+      <span class="chip ${d.shovel?"on":"off"} shovel">Shovel crews ${d.shovel?(d.s24>=SHOVEL_MAX?"yes, with blowers":"yes"):"no"}</span>
+      <span class="chip ${d.treat?"on":"off"} treat">${d.sandOnly?"Sand":"Sand/salt"} ${d.treat?"yes":"no"}</span>
+    </div>
+    <div class="nums">
+      <div class="num"><div class="v">${inch(d.s24)}</div><div class="l">Next 24 hrs</div></div>
+      <div class="num"><div class="v">${inch(d.s48)}</div><div class="l">Next 48 hrs</div></div>
+      <div class="num"><div class="v">${d.plowAt>=0&&d.plowAt<48?esc(fmtH(t0+d.plowAt*3600e3)):"–"}</div><div class="l">Hits 1.5"</div></div>
+      <div class="num"><div class="v">${d.tMin==null?"–":Math.round(d.tMin)+"°/"+Math.round(d.tMax)+"°"}</div><div class="l">Low/high 24 hrs</div></div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:4px">Timing, next 48 hours</h3>
+      <div class="chart-wrap">${chart(d,t0)}</div>
+      <div class="legend">Bars: snow per hour. Line: running total. ${d.useNWS?"From the NWS forecast.":"From the model median (NWS snow grid unavailable)."}</div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:4px">Source check</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Source</th><th class="r">24 hrs</th><th class="r">48 hrs</th></tr></thead>
+        <tbody>${d.sources.map(s=>`<tr><td>${s.primary?"<b>":""}${esc(s.label)}${s.primary?"</b>":""}</td><td class="r">${inch(s.s24)}</td><td class="r">${inch(s.s48)}</td></tr>`).join("")}</tbody>
+      </table></div>
+      <div class="legend">Range across sources for the next 24 hours: ${inch(d.lo)} to ${inch(d.hi)}.</div>
+    </div>
+    ${nws&&nws.periods.length?`<div><h3 style="margin-bottom:4px">NWS forecast</h3><div class="periods">${nws.periods.map(p=>`<div><b>${esc(p.name)}:</b> ${esc(p.detailedForecast)}</div>`).join("")}</div></div>`:""}
+    ${errs.length?`<p class="err">Partial data: ${esc(errs.join("; "))}</p>`:""}`;
+}
+
+function renderAlerts(all){
+  const seen=new Set(), list=all.filter(a=>!seen.has(a.id)&&seen.add(a.id));
+  $("#alerts").innerHTML=list.map(a=>`<div class="alert"><b>${esc(a.event)}</b> · ${esc(a.areaDesc||"")}<br><span>${esc(a.headline||"")}</span><details><summary>Details</summary>${esc(a.description||"")}</details></div>`).join("");
+}
+
+async function loadAFD(){
+  try{
+    const list=await getJSON("https://api.weather.gov/products/types/AFD/locations/AFC");
+    const id=list["@graph"]?.[0]?.id; if(!id) throw new Error("none issued");
+    const p=await getJSON("https://api.weather.gov/products/"+id);
+    $("#afd").textContent=p.productText;
+  }catch(e){$("#afd").textContent="Couldn't load the discussion ("+e.message+"). Read it at weather.gov/afc.";}
+}
+
+let busy=false;
+async function refreshAll(){
+  if(busy) return; busy=true; $("#refresh").disabled=true; $("#stamp").textContent="Updating…";
+  const now=new Date(); const t0=Math.floor(now.getTime()/3600e3)*3600e3;
+  const alerts=[];
+  await Promise.all(LOCS.map(async loc=>{
+    const errs=[]; let nws=null, models=null;
+    const [a,b]=await Promise.allSettled([loadNWS(loc,t0),loadModels(loc,t0)]);
+    if(a.status==="fulfilled"){nws=a.value; alerts.push(...nws.alerts); if(nws.gridErr) errs.push("NWS grid: "+nws.gridErr);} else errs.push("NWS: "+a.reason.message);
+    if(b.status==="fulfilled") models=b.value; else errs.push("Models: "+b.reason.message);
+    renderLoc(loc,nws,models,t0,errs);
+  }));
+  renderAlerts(alerts);
+  loadAFD();
+  $("#stamp").textContent="Updated "+fmtT(Date.now())+" AK time";
+  busy=false; $("#refresh").disabled=false;
+}
+
+let loop="PAHG";
+function reloadRadar(){$("#radarImg").src=`https://radar.weather.gov/ridge/standard/${loop}_loop.gif?t=${Date.now()}`;}
+document.querySelectorAll("[data-loop]").forEach(b=>b.addEventListener("click",()=>{
+  loop=b.dataset.loop; document.querySelectorAll("[data-loop]").forEach(x=>x.setAttribute("aria-pressed",x===b)); reloadRadar();}));
+$("#refresh").addEventListener("click",()=>{refreshAll();reloadRadar();});
+setInterval(()=>{if(!document.hidden) refreshAll();},10*60e3);
+setInterval(()=>{if(!document.hidden) reloadRadar();},5*60e3);
+let lastRun=0; const _ra=refreshAll; refreshAll=async()=>{lastRun=Date.now(); return _ra();};
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-lastRun>2*60e3) refreshAll();});
+refreshAll();
+</script>
+</body>
+</html>
