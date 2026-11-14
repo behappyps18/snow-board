@@ -97,6 +97,8 @@ td.r,th.r{text-align:right}
 .oneline{font-size:.95rem;font-variant-numeric:tabular-nums}
 .radar-btns.two{grid-template-columns:1fr 1fr}
 .radar-btns.two .rbtn{min-height:52px;text-align:center;justify-content:center}
+.srcline{font-size:.88rem;color:var(--muted)}
+.srcline b{color:var(--ink)}
 .now{display:flex;flex-direction:column;gap:4px;font-size:.92rem}
 .nowrow{border:1px solid var(--line);border-radius:8px;padding:6px 10px}
 .nowrow>span:first-child{color:var(--muted)}
@@ -241,18 +243,27 @@ async function loadNWS(loc,t0){
 }
 
 async function loadModels(loc,t0){
-  const url=`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}`+
-    `&hourly=snowfall,precipitation,temperature_2m,weather_code&models=${MODELS.map(m=>m.key).join(",")}`+
+  // One request per model, so a single model outage can't hide the others. Each model has a fallback name.
+  const ALT={ecmwf_ifs025:"ecmwf_ifs",gfs_seamless:"gfs_global",gem_seamless:"gem_global",icon_seamless:"icon_global"};
+  const base=`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}`+
+    `&hourly=snowfall,precipitation,temperature_2m,weather_code`+
     `&precipitation_unit=inch&temperature_unit=fahrenheit&timeformat=unixtime&forecast_days=3&timezone=${encodeURIComponent(TZ)}`;
-  const d=await getJSON(url);
-  const h=d.hourly, out={};
-  for(const m of MODELS){
-    const snow=new Array(HOURS).fill(null), temp=new Array(HOURS).fill(null), code=new Array(HOURS).fill(null);
-    h.time.forEach((t,i)=>{const idx=Math.round((t*1000-t0)/3600e3); if(idx<0||idx>=HOURS) return;
-      // snowfall arrives in inches when precipitation_unit=inch
-      snow[idx]=h[`snowfall_${m.key}`]?.[i]??null; temp[idx]=h[`temperature_2m_${m.key}`]?.[i]??null; code[idx]=h[`weather_code_${m.key}`]?.[i]??null;});
-    if(snow.some(v=>v!=null)) out[m.key]={snow,temp,code};
-  }
+  const out={}, failed=[];
+  await Promise.all(MODELS.map(async m=>{
+    for(const key of [m.key,ALT[m.key]]){
+      try{
+        const h=(await getJSON(base+"&models="+key)).hourly;
+        const snow=new Array(HOURS).fill(null), temp=new Array(HOURS).fill(null), code=new Array(HOURS).fill(null);
+        h.time.forEach((t,i)=>{const idx=Math.round((t*1000-t0)/3600e3); if(idx<0||idx>=HOURS) return;
+          // snowfall arrives in inches when precipitation_unit=inch
+          snow[idx]=h.snowfall?.[i]??null; temp[idx]=h.temperature_2m?.[i]??null; code[idx]=h.weather_code?.[i]??null;});
+        if(snow.some(v=>v!=null)){out[m.key]={snow,temp,code};return;}
+      }catch(e){}
+    }
+    failed.push(m.label);
+  }));
+  if(!Object.keys(out).length) throw new Error("none of the 4 models loaded");
+  out._failed=failed;
   return out;
 }
 
@@ -264,7 +275,7 @@ function firstSnowHour(arr){return arr.findIndex(v=>(v||0)>=0.05);}
 
 function decide(loc,nws,models,t0){
   // Primary curve: NWS when its grid has snow data, else the model median per hour.
-  const mk=Object.keys(models);
+  const mk=Object.keys(models).filter(k=>k[0]!=="_");
   const medCurve=Array.from({length:HOURS},(_,i)=>{const xs=mk.map(k=>models[k].snow[i]).filter(v=>v!=null);return xs.length?median(xs):null;});
   const useNWS=nws&&hasData(nws.snow);
   const primary=useNWS?nws.snow:medCurve;
@@ -345,6 +356,7 @@ function renderLoc(loc,nws,models,t0,errs){
     <div class="loc-head"><h2>${esc(loc.name)}</h2><span class="conf ${d.conf}">${confTxt}</span></div>
     <div class="call ${d.cls}"><div class="verb">${esc(d.verb)}</div><div class="why">${esc(d.why)}</div></div>
     <div class="oneline">Next 24 hrs <b>${inch(d.s24)}</b> · 48 hrs <b>${inch(d.s48)}</b>${plowTxt} · ${d.tMin==null?"":Math.round(d.tMin)+"° to "+Math.round(d.tMax)+"°"}</div>
+    <div class="srcline">Sources, 24 hrs: ${d.sources.map(s=>`${esc(s.label.replace(" (primary)","").replace(/ \(.*\)/,""))} <b>${inch(s.s24)}</b>`).join(" · ")}</div>
     <div class="now" id="now-${loc.id}"></div>
     <details${wasOpen?" open":""}><summary>Timing chart and forecast details</summary>
       <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px">
@@ -412,7 +424,7 @@ async function refreshAll(){
     const errs=[]; let nws=null, models=null;
     const [a,b]=await Promise.allSettled([loadNWS(loc,t0),loadModels(loc,t0)]);
     if(a.status==="fulfilled"){nws=a.value; alerts.push(...nws.alerts); if(nws.gridErr) errs.push("NWS grid: "+nws.gridErr);} else errs.push("NWS: "+a.reason.message);
-    if(b.status==="fulfilled") models=b.value; else errs.push("Models: "+b.reason.message);
+    if(b.status==="fulfilled"){models=b.value; if(models._failed.length) errs.push("Not loading right now: "+models._failed.join(", "));} else errs.push("Models: "+b.reason.message);
     renderLoc(loc,nws,models,t0,errs);
     await loadObs(loc);
   }));
