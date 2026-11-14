@@ -450,6 +450,8 @@ async function refreshAll(){
   $("#stamp").textContent="Updated "+fmtT(Date.now())+" AK time";
   busy=false; $("#refresh").disabled=false;
 }
+// Create the cards in a fixed order (Anchorage first) so whichever loads first can't jump ahead.
+for(const loc of LOCS){const e=document.createElement("section");e.className="panel";e.id="loc-"+loc.id;e.innerHTML=`<div class="loc-head"><h2>${esc(loc.name)}</h2></div><p class="muted" style="margin:0">Loading forecast…</p>`;$("#locs").appendChild(e);}
 // Show the last forecast instantly while fresh data loads.
 (function showCached(){
   let any=false;
